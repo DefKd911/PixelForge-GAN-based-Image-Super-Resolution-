@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixelForge - NextGen Image Enhancer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --gradient-primary: linear-gradient(135deg, #6366f1, #8b5cf6, #d946ef);
+            --gradient-secondary: linear-gradient(135deg, #059669, #0d9488);
+            --gradient-accent: linear-gradient(45deg, #f43f5e, #fb7185);
+            --blur-bg: rgba(17, 24, 39, 0.7);
+        }
+
+        body {
+            background-color: #030712;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(217, 70, 239, 0.15) 0%, transparent 50%);
+            background-attachment: fixed;
+            color: #f9fafb;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .glass-morphism {
+            background: var(--blur-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .gradient-text {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: gradient-shift 8s ease infinite;
+        }
+
+        .upload-zone {
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .upload-zone:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px -10px rgba(99, 102, 241, 0.3);
+        }
+
+        .upload-zone.drag-active {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.8);
+            transform: scale(1.02);
+        }
+
+        .comparison-slider {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .comparison-slider img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .slider-handle {
+            position: absolute;
+            width: 3px;
+            height: 100%;
+            background: #f9fafb;
+            cursor: ew-resize;
+            z-index: 10;
+        }
+
+        .slider-handle::after {
+            content: '';
+            position: absolute;
+            width: 44px;
+            height: 44px;
+            background: var(--gradient-primary);
+            border: 3px solid #fff;
+            border-radius: 50%;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slider-handle::before {
+            content: '↔';
+            position: absolute;
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 20px;
+            z-index: 1;
+        }
+
+        .slider-handle:hover::after {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .metric-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.25);
+        }
+
+        .metric-value {
+            background: var(--gradient-secondary);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-size: 2.5rem;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(99, 102, 241, 0.1);
+            border-left-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .enhanced-image {
+            clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);
+        }
+
+        .feature-badge {
+            background: linear-gradient(45deg, rgba(99, 102, 241, 0.1), rgba(217, 70, 239, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            backdrop-filter: blur(5px);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            color: #e5e7eb;
+            transition: all 0.3s ease;
+        }
+
+        .feature-badge:hover {
+            background: linear-gradient(45deg, rgba(99, 102, 241, 0.2), rgba(217, 70, 239, 0.2));
+            transform: translateY(-2px);
+        }
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <!-- Floating Particles Background -->
+    <div class="floating-particles" id="particles"></div>
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-16">
+            <div class="mb-6 flex justify-center space-x-4">
+                <span class="feature-badge">
+                    <i class="fas fa-microchip mr-2"></i>AI-Powered
+                </span>
+                <span class="feature-badge">
+                    <i class="fas fa-bolt mr-2"></i>Real-time Processing
+                </span>
+                <span class="feature-badge">
+                    <i class="fas fa-shield-alt mr-2"></i>High Fidelity
+                </span>
+            </div>
+            
+            <h1 class="text-6xl font-bold gradient-text mb-6">PixelForge</h1>
+            <p class="text-xl text-gray-300 mb-4">NextGen Image Enhancer trained, designed and developed by</p>
+            <p class="text-2xl font-semibold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 mb-6">
+                Materials Engineering Department, IIT Jammu
+            </p>
+            <div class="bg-indigo-900/30 border border-indigo-500/20 rounded-lg p-4 max-w-2xl mx-auto">
+                <p class="text-lg text-gray-300">
+                    <i class="fas fa-info-circle text-indigo-400 mr-2"></i>
+                    <span class="font-semibold">INSTRUCTIONS:</span> Use the slider below to compare original and enhanced images. Drag left or right to reveal the improvements.
+                </p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="glass-morphism rounded-2xl p-8 mb-12">
+            <!-- Upload Zone -->
+            <div class="mb-12">
+                <div class="upload-zone rounded-2xl p-12 text-center cursor-pointer relative overflow-hidden">
+                    <input id="imageInput" type="file" class="hidden" accept=".png,.jpg,.jpeg">
+                    <div class="space-y-6">
+                        <i class="fas fa-cloud-upload-alt text-5xl text-indigo-400"></i>
+                        <h3 class="text-2xl font-semibold">Drop your image here</h3>
+                        <p class="text-gray-400">or click to browse</p>
+                        <div class="text-sm text-gray-500 mt-4">Supports PNG, JPG up to 16MB</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Indicator -->
+            <div id="processingIndicator" class="hidden">
+                <div class="flex flex-col items-center justify-center space-y-6 py-12">
+                    <div class="loading-spinner"></div>
+                    <p class="text-xl text-indigo-400 animate-pulse">Enhancing your image with AI magic...</p>
+                </div>
+            </div>
+
+            <!-- Image Comparison -->
+            <div id="comparisonView" class="hidden space-y-12">
+                <h2 class="text-3xl font-bold gradient-text mb-8">Image Comparison</h2>
+                <div class="comparison-slider">
+                    <div class="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 bg-black/70 text-white px-6 py-3 rounded-full backdrop-blur-sm text-sm font-medium">
+                        <i class="fas fa-arrows-left-right mr-2"></i>
+                        Slide to compare original vs enhanced
+                    </div>
+                    <img id="originalImage" src="" alt="Original" class="original-image">
+                    <img id="enhancedImage" src="" alt="Enhanced" class="enhanced-image">
+                    <div class="slider-handle" style="left: 50%"></div>
+                    <div class="absolute bottom-4 left-4 bg-black/70 px-4 py-2 rounded-lg backdrop-blur-sm text-sm">
+                        <span class="text-gray-300">Original</span>
+                    </div>
+                    <div class="absolute bottom-4 right-4 bg-black/70 px-4 py-2 rounded-lg backdrop-blur-sm text-sm">
+                        <span class="text-indigo-400">Enhanced</span>
+                    </div>
+                </div>
+
+                <!-- Metrics Panel -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+                    <div class="metric-card glass-morphism p-6 rounded-xl text-center">
+                        <h3 class="text-lg font-medium text-gray-300 mb-3">PSNR</h3>
+                        <p id="psnrValue" class="metric-value font-bold">--</p>
+                        <p class="text-sm text-gray-400 mt-2">Peak Signal-to-Noise Ratio</p>
+                    </div>
+                    <div class="metric-card glass-morphism p-6 rounded-xl text-center">
+                        <h3 class="text-lg font-medium text-gray-300 mb-3">N-PSNR</h3>
+                        <p id="npsnrValue" class="metric-value font-bold">--</p>
+                        <p class="text-sm text-gray-400 mt-2">Normalized PSNR</p>
+                    </div>
+                    <div class="metric-card glass-morphism p-6 rounded-xl text-center">
+                        <h3 class="text-lg font-medium text-gray-300 mb-3">SSIM</h3>
+                        <p id="ssimValue" class="metric-value font-bold">--</p>
+                        <p class="text-sm text-gray-400 mt-2">Structural Similarity Index</p>
+                    </div>
+                    <div class="metric-card glass-morphism p-6 rounded-xl text-center">
+                        <h3 class="text-lg font-medium text-gray-300 mb-3">MOS</h3>
+                        <p id="mosValue" class="metric-value font-bold">--</p>
+                        <p class="text-sm text-gray-400 mt-2">Mean Opinion Score</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center py-6 glass-morphism rounded-xl">
+            <p class="text-gray-400">© 2025 PixelForge - Materials Engineering Department, IIT Jammu</p>
+            <div class="mt-4 space-x-4">
+                <a href="#" class="text-gray-400 hover:text-indigo-400 transition-colors">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-indigo-400 transition-colors">
+                    <i class="fab fa-linkedin"></i>
+                </a>
+                <a href="#" class="text-gray-400 hover:text-indigo-400 transition-colors">
+                    <i class="fas fa-envelope"></i>
+                </a>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.animationDelay = `${Math.random() * 20}s`;
+                container.appendChild(particle);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+
+            const uploadZone = document.querySelector('.upload-zone');
+            const imageInput = document.getElementById('imageInput');
+            const comparisonView = document.getElementById('comparisonView');
+            const processingIndicator = document.getElementById('processingIndicator');
+            const sliderHandle = document.querySelector('.slider-handle');
+            const enhancedImage = document.querySelector('.enhanced-image');
+
+            // Drag and drop functionality
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('drag-active');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('drag-active');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('drag-active');
+                if (e.dataTransfer.files.length) {
+                    handleImageUpload(e.dataTransfer.files[0]);
+                }
+            });
+
+            uploadZone.addEventListener('click', () => {
+                imageInput.click();
+            });
+
+            // Image comparison slider
+            let isDragging = false;
+
+            sliderHandle.addEventListener('mousedown', () => {
+                isDragging = true;
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const slider = document.querySelector('.comparison-slider');
+                const rect = slider.getBoundingClientRect();
+                const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+                const percent = (x / rect.width) * 100;
+
+                updateSliderPosition(percent);
+            });
+
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            // Touch support for slider
+            sliderHandle.addEventListener('touchstart', (e) => {
+                isDragging = true;
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+
+                const slider = document.querySelector('.comparison-slider');
+                const rect = slider.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
+                const percent = (x / rect.width) * 100;
+
+                updateSliderPosition(percent);
+            });
+
+            document.addEventListener('touchend', () => {
+                isDragging = false;
+            });
+
+            function updateSliderPosition(percent) {
+                sliderHandle.style.left = `${percent}%`;
+                enhancedImage.style.clipPath = `polygon(${percent}% 0, 100% 0, 100% 100%, ${percent}% 100%)`;
+            }
+
+            // Handle image upload
+            imageInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleImageUpload(e.target.files[0]);
+                }
+            });
+
+            async function handleImageUpload(file) {
+                if (!file.type.match(/image\/(jpeg|png)/i)) {
+                    alert('Please upload a valid image file (JPEG or PNG)');
+                    return;
+                }
+
+                processingIndicator.classList.remove('hidden');
+                comparisonView.classList.add('hidden');
+
+                const formData = new FormData();
+                formData.append('image', file);
+
+                try {
+                    const response = await fetch('/enhance', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Enhancement failed');
+                    }
+
+                    const data = await response.json();
+                    
+                    document.getElementById('originalImage').src = data.input_image;
+                    document.getElementById('enhancedImage').src = data.enhanced_image;
+                    
+                    // Animate metrics counting up
+                    animateMetric('psnrValue', data.metrics.psnr, 2);
+                    animateMetric('npsnrValue', data.metrics.npsnr, 2);
+                    animateMetric('ssimValue', data.metrics.ssim, 4);
+                    animateMetric('mosValue', data.metrics.mos, 1);
+
+                    comparisonView.classList.remove('hidden');
+                } catch (error) {
+                    alert('Error processing image: ' + error.message);
+                } finally {
+                    processingIndicator.classList.add('hidden');
+                }
+            }
+
+            function animateMetric(elementId, finalValue, decimals) {
+                const element = document.getElementById(elementId);
+                const duration = 1500; // Animation duration in milliseconds
+                const steps = 60; // Number of steps in animation
+                const stepValue = finalValue / steps;
+                let currentStep = 0;
+
+                const interval = setInterval(() => {
+                    currentStep++;
+                    const currentValue = (stepValue * currentStep).toFixed(decimals);
+                    element.textContent = currentValue;
+
+                    if (currentStep >= steps) {
+                        clearInterval(interval);
+                        element.textContent = finalValue.toFixed(decimals);
+                    }
+                }, duration / steps);
+            }
+        });
+    </script>
+</body>
+</html>
