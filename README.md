@@ -49,7 +49,15 @@ jupyter>=1.0.0
 - Activation: LeakyReLU with 0.2 negative slope.
 - Batch Normalization: Applied after each convolutional layer.
 - Dense Layers: Final layers for classification (512 → 1024 → 1).
-- 
+# Running the Application
+*Download the Project*
+- Clone or download the ESR_nexus directory to your local system.
+-Setup Virtual Environment: python -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
+- Install Dependencies: pip install -r requirements.txt
+- Start the Web Application:python app.py
+- Access the Application: Open your web browser and navigate to http://localhost:5000. Upload your low-resolution image to enhance its quality.
+
 # Challenges and Solutions
 - Training Stability: Solved with hyperparameter tuning and pre-trained VGG for perceptual loss.
 - Output Quality: Improved with deeper generators and residual blocks.
